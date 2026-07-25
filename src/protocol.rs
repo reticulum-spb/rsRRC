@@ -143,6 +143,14 @@ impl Envelope {
         Some(envelope)
     }
 
+    pub fn direct_notice(source: &[u8; 16], destination: &[u8; 16], text: &str) -> Option<Self> {
+        valid_text(text, 16 * 1024).then_some(())?;
+        let mut envelope = Self::new(T_NOTICE, source);
+        envelope.set(K_DST, Value::Bytes(destination.to_vec()));
+        envelope.set(K_BODY, Value::Text(text.to_string()));
+        Some(envelope)
+    }
+
     pub fn command(source: &[u8; 16], room: Option<&str>, command: &str) -> Option<Self> {
         if !command.starts_with('/') || !valid_text(command, 16 * 1024) {
             return None;
@@ -696,6 +704,16 @@ mod tests {
 
         let decoded = Envelope::decode(&envelope.encode().unwrap()).unwrap();
         assert_eq!(decoded.room_state(), Some(state));
+    }
+
+    #[test]
+    fn direct_notice_has_destination_without_room() {
+        let notice = Envelope::direct_notice(&[7; 16], &[8; 16], "hello").unwrap();
+        assert_eq!(notice.integer(K_T), Some(T_NOTICE));
+        assert_eq!(notice.bytes(K_DST), Some(&[8; 16][..]));
+        assert_eq!(notice.room(), None);
+        assert_eq!(notice.body_text(), Some("hello"));
+        assert!(Envelope::direct_notice(&[7; 16], &[8; 16], "\n").is_none());
     }
 
     #[test]
