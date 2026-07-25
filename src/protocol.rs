@@ -307,6 +307,10 @@ impl Envelope {
         self.text(K_NICK)
     }
 
+    pub fn set_nick(&mut self, nick: &str) {
+        self.set(K_NICK, Value::Text(nick.to_string()));
+    }
+
     pub fn body_text(&self) -> Option<&str> {
         self.text(K_BODY)
     }
