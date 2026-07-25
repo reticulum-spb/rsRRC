@@ -9,7 +9,8 @@ Reticulum transport, server routing, persistence, or user interface code.
 
 It is used by the adjacent `rsRRCD` hub daemon and `rsNomadNet` client.
 
-The crate also defines an optional `K_ROOM_STATE` extension. Hubs can attach
-the registered flag, mode string, and topic to JOINED or NOTICE envelopes
-without changing their standard RRC v1 body. Clients that do not understand
-the extension can safely ignore the additional integer-key field.
+The crate also defines optional structured `K_ROOM_STATE` and `K_USER_LIST`
+extensions. Hubs can attach room metadata to JOINED or NOTICE envelopes and
+member metadata to WHO replies without changing their standard RRC v1 bodies.
+`CAP_ROOM_STATE` and `CAP_USER_LIST` advertise support in HELLO and WELCOME;
+older peers can safely ignore the additional integer-key fields.

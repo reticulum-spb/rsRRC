@@ -38,6 +38,8 @@ pub const B_WELCOME_LIMITS: i128 = 3;
 pub const CAP_RESOURCE_ENVELOPE: i128 = 0;
 pub const CAP_ACTION: i128 = 1;
 pub const CAP_DIRECT_NOTICE: i128 = 2;
+pub const CAP_ROOM_STATE: i128 = 3;
+pub const CAP_USER_LIST: i128 = 4;
 
 pub const B_RES_ID: i128 = 0;
 pub const B_RES_KIND: i128 = 1;

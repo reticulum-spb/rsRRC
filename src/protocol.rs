@@ -30,6 +30,8 @@ pub struct Capabilities {
     pub resource_envelope: bool,
     pub action: bool,
     pub direct_notice: bool,
+    pub room_state: bool,
+    pub user_list: bool,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -104,6 +106,8 @@ impl Envelope {
         capabilities.insert(Value::Integer(CAP_RESOURCE_ENVELOPE), Value::Bool(true));
         capabilities.insert(Value::Integer(CAP_ACTION), Value::Bool(true));
         capabilities.insert(Value::Integer(CAP_DIRECT_NOTICE), Value::Bool(true));
+        capabilities.insert(Value::Integer(CAP_ROOM_STATE), Value::Bool(true));
+        capabilities.insert(Value::Integer(CAP_USER_LIST), Value::Bool(true));
         let mut body = Map::new();
         body.insert(Value::Integer(B_HELLO_CAPS), Value::Map(capabilities));
         envelope.set(K_BODY, Value::Map(body));
@@ -405,6 +409,8 @@ impl Envelope {
                 resource_envelope: map_bool(values, CAP_RESOURCE_ENVELOPE),
                 action: map_bool(values, CAP_ACTION),
                 direct_notice: map_bool(values, CAP_DIRECT_NOTICE),
+                room_state: map_bool(values, CAP_ROOM_STATE),
+                user_list: map_bool(values, CAP_USER_LIST),
             },
             _ => Capabilities::default(),
         };
@@ -747,8 +753,30 @@ mod tests {
         assert!(welcome.capabilities.resource_envelope);
         assert!(welcome.capabilities.action);
         assert!(!welcome.capabilities.direct_notice);
+        assert!(!welcome.capabilities.room_state);
+        assert!(!welcome.capabilities.user_list);
         assert_eq!(welcome.limits.max_nick_bytes, Some(32));
         assert_eq!(welcome.limits.max_message_bytes, Some(16_384));
+    }
+
+    #[test]
+    fn hello_advertises_structured_state_extensions() {
+        let hello = Envelope::hello(&[7; 16], None);
+        let Some(Value::Map(body)) = hello.get(K_BODY) else {
+            panic!("HELLO body is missing");
+        };
+        let Some(Value::Map(capabilities)) = body.get(&Value::Integer(B_HELLO_CAPS)) else {
+            panic!("HELLO capabilities are missing");
+        };
+
+        assert_eq!(
+            capabilities.get(&Value::Integer(CAP_ROOM_STATE)),
+            Some(&Value::Bool(true))
+        );
+        assert_eq!(
+            capabilities.get(&Value::Integer(CAP_USER_LIST)),
+            Some(&Value::Bool(true))
+        );
     }
 
     #[test]
