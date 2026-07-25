@@ -14,3 +14,6 @@ extensions. Hubs can attach room metadata to JOINED or NOTICE envelopes and
 member metadata to WHO replies without changing their standard RRC v1 bodies.
 `CAP_ROOM_STATE` and `CAP_USER_LIST` advertise support in HELLO and WELCOME;
 older peers can safely ignore the additional integer-key fields.
+
+The exact capability and CBOR field layout is documented in
+[`EXTENSIONS.md`](EXTENSIONS.md).
