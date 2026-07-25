@@ -12,6 +12,8 @@ pub const K_NICK: i128 = 7;
 pub const K_DST: i128 = 8;
 /// Optional structured state for the room named by `K_ROOM`.
 pub const K_ROOM_STATE: i128 = 9;
+/// Optional structured member list accompanying a WHO notice.
+pub const K_USER_LIST: i128 = 10;
 
 pub const T_HELLO: u64 = 1;
 pub const T_WELCOME: u64 = 2;
@@ -46,3 +48,8 @@ pub const B_RES_ENCODING: i128 = 4;
 pub const B_ROOM_REGISTERED: i128 = 0;
 pub const B_ROOM_MODES: i128 = 1;
 pub const B_ROOM_TOPIC: i128 = 2;
+
+pub const B_USER_IDENTITY: i128 = 0;
+pub const B_USER_NICK: i128 = 1;
+pub const B_USER_OPERATOR: i128 = 2;
+pub const B_USER_VOICED: i128 = 3;

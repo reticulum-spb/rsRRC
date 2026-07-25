@@ -66,6 +66,8 @@ pub struct RoomState {
 pub struct UserInfo {
     pub nick: Option<String>,
     pub identity: String,
+    pub operator: bool,
+    pub voiced: bool,
 }
 
 static WHO_ENTRY: LazyLock<regex::Regex> = LazyLock::new(|| {
@@ -334,6 +336,48 @@ impl Envelope {
         })
     }
 
+    pub fn set_user_list(&mut self, users: &[UserInfo]) {
+        let users = users
+            .iter()
+            .map(|user| {
+                let mut entry = Map::new();
+                entry.insert(
+                    Value::Integer(B_USER_IDENTITY),
+                    Value::Text(user.identity.clone()),
+                );
+                if let Some(nick) = &user.nick {
+                    entry.insert(Value::Integer(B_USER_NICK), Value::Text(nick.clone()));
+                }
+                entry.insert(Value::Integer(B_USER_OPERATOR), Value::Bool(user.operator));
+                entry.insert(Value::Integer(B_USER_VOICED), Value::Bool(user.voiced));
+                Value::Map(entry)
+            })
+            .collect();
+        self.set(K_USER_LIST, Value::Array(users));
+    }
+
+    pub fn user_list(&self) -> Option<Vec<UserInfo>> {
+        let Value::Array(users) = self.get(K_USER_LIST)? else {
+            return None;
+        };
+        Some(
+            users
+                .iter()
+                .filter_map(|value| {
+                    let Value::Map(entry) = value else {
+                        return None;
+                    };
+                    Some(UserInfo {
+                        nick: map_text(entry, B_USER_NICK).map(str::to_string),
+                        identity: map_text(entry, B_USER_IDENTITY)?.to_ascii_lowercase(),
+                        operator: map_bool(entry, B_USER_OPERATOR),
+                        voiced: map_bool(entry, B_USER_VOICED),
+                    })
+                })
+                .collect(),
+        )
+    }
+
     pub fn welcome_hub_name(&self) -> Option<&str> {
         match map_get(self.map(K_BODY)?, B_WELCOME_HUB)? {
             Value::Text(value) => Some(value),
@@ -526,11 +570,15 @@ pub fn parse_who_notice(text: &str) -> Option<(String, Vec<UserInfo>)> {
                     return Some(UserInfo {
                         nick: None,
                         identity: hash.as_str().to_ascii_lowercase(),
+                        operator: false,
+                        voiced: false,
                     });
                 }
                 Some(UserInfo {
                     nick: Some(captures.name("nick")?.as_str().trim().to_string()),
                     identity: captures.name("prefix")?.as_str().to_ascii_lowercase(),
+                    operator: false,
+                    voiced: false,
                 })
             })
             .collect()
@@ -635,6 +683,20 @@ mod tests {
     }
 
     #[test]
+    fn structured_user_list_round_trips_roles() {
+        let users = vec![UserInfo {
+            nick: Some("alice".into()),
+            identity: "11111111111111111111111111111111".into(),
+            operator: true,
+            voiced: false,
+        }];
+        let mut envelope = Envelope::new(T_NOTICE, &[7; 16]);
+        envelope.set_user_list(&users);
+        let decoded = Envelope::decode(&envelope.encode().unwrap()).unwrap();
+        assert_eq!(decoded.user_list(), Some(users));
+    }
+
+    #[test]
     fn builds_verifiable_resource_envelope() {
         let data = b"a long bot response";
         let envelope =
@@ -704,14 +766,20 @@ mod tests {
                     UserInfo {
                         nick: Some("alice".into()),
                         identity: "0b0b0b0b0b0b".into(),
+                        operator: false,
+                        voiced: false,
                     },
                     UserInfo {
                         nick: Some("user, alt".into()),
                         identity: "161616161616".into(),
+                        operator: false,
+                        voiced: false,
                     },
                     UserInfo {
                         nick: None,
                         identity: "22222222222222222222222222222222".into(),
+                        operator: false,
+                        voiced: false,
                     },
                 ],
             ))
