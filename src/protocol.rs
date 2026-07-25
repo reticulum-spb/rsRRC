@@ -163,6 +163,12 @@ impl Envelope {
         envelope
     }
 
+    pub fn ping(source: &[u8; 16], nonce: u64) -> Self {
+        let mut envelope = Self::new(T_PING, source);
+        envelope.set(K_BODY, Value::Integer(nonce.into()));
+        envelope
+    }
+
     pub fn resource(
         source: &[u8; 16],
         room: Option<&str>,
