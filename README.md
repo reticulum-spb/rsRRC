@@ -7,7 +7,9 @@ This crate owns protocol constants, integer-key CBOR envelopes, validation,
 capabilities, and common message builders. It intentionally contains no
 Reticulum transport, server routing, persistence, or user interface code.
 
-It is used by the adjacent `rsRRCD` hub daemon and `rsNomadNet` client.
+It is used directly by the adjacent `rsRRCD` hub daemon and `rsRRC-client`
+library. `rsNomadNet` consumes the protocol through `rsRRC-client`, keeping
+transport and reconnect behavior out of its web application layer.
 
 The crate also defines optional structured `K_ROOM_STATE` and `K_USER_LIST`
 extensions. Hubs can attach room metadata to JOINED or NOTICE envelopes and
@@ -17,3 +19,16 @@ older peers can safely ignore the additional integer-key fields.
 
 The exact capability and CBOR field layout is documented in
 [`EXTENSIONS.md`](EXTENSIONS.md).
+
+## Ecosystem role
+
+`rsRRC` is the transport-independent layer of the Rust RRC stack:
+
+```text
+rsRRCD ───────┐
+              ├── rsRRC
+rsNomadNet ─ rsRRC-client ─┘
+```
+
+This boundary allows bots and other clients to reuse the same validated
+envelopes without depending on rsNomadNet or duplicating protocol constants.
